@@ -208,7 +208,9 @@ void aufMuehlenPruefen(int x,int y)
 
                     if (spielfeld[j+(j-i)][y].wert==spielerAnDerReihe && j+(j-i)<7)
                     {
-                        wxMessageBox("test1234");
+                        aktuellerSpielerHatMuehle=true;
+
+
                     }
                 }
             }
@@ -233,7 +235,10 @@ void aufMuehlenPruefen(int x,int y)
                 {
                     if (spielfeld[x][j+(j-i)].wert==spielerAnDerReihe && j+(j-i)<7)
                     {
-                        wxMessageBox("test1234");
+                        aktuellerSpielerHatMuehle=true;
+
+
+
                     }
                 }
             }
@@ -250,6 +255,7 @@ void steinentfernen(int x,int y)
     {
 
         spielfeld[x][y].wert=0;
+        aktuellerSpielerHatMuehle=false;
         spieler[spielerAnDerReihe-1].anzahlsteineweggenohmen++;
         spieler[spielerNichtAnDerReihe-1].anzahltatsaechlicheSteine--;
 
@@ -307,7 +313,7 @@ void muehleFrame::OnLeftDown(wxMouseEvent& event)
 
     if (phase==1)
     {
-        if (spieler[spielerAnDerReihe-1].anzahlmuehlen <= spieler[spielerAnDerReihe-1].anzahlsteineweggenohmen)
+        if (!aktuellerSpielerHatMuehle)
         {
 
             //if ((spielfeld[mausX/90][mausY/90].wert!=-1) && (spielfeld[mausX/90][mausY/90].wert!=1) && (spielfeld[mausX/90][mausY/90].wert!=2))
@@ -321,7 +327,7 @@ void muehleFrame::OnLeftDown(wxMouseEvent& event)
 
                 aufMuehlenPruefen(spielfeldX,spielfeldY);
 
-                if ((spielfeld[spielfeldX][spielfeldY].wert==spielerAnDerReihe && spieler[spielerAnDerReihe-1].anzahlmuehlen <= spieler[spielerAnDerReihe-1].anzahlsteineweggenohmen))
+                if ((spielfeld[spielfeldX][spielfeldY].wert==spielerAnDerReihe && !aktuellerSpielerHatMuehle))
                 {
                     if (spielerAnDerReihe==1)
                     {
@@ -345,7 +351,7 @@ void muehleFrame::OnLeftDown(wxMouseEvent& event)
 
     else if (phase==2)
     {
-
+    wxMessageBox("test");
     }
 
 
@@ -360,10 +366,10 @@ void muehleFrame::OnLeftDown(wxMouseEvent& event)
 
 
 
-    if (spieler[spielerAnDerReihe-1].anzahlmuehlen > spieler[spielerAnDerReihe-1].anzahlsteineweggenohmen)
+    if (aktuellerSpielerHatMuehle)
     {
-     steinentfernen(spielfeldX,spielfeldY);
-      Refresh();
+        steinentfernen(spielfeldX,spielfeldY);
+        Refresh();
     }
 
 
