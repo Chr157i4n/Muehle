@@ -21,8 +21,12 @@
     spieler spieler[2];
     wxBitmap bildSpielerWeiss;
     wxBitmap bildSpielerSchwarz;
+    wxBitmap hintergrund;
     bool aktuellerSpielerHatMuehle = false;
     int phase=1;
+    bool figurausgewaehlt=false;
+    wxPoint ausgewaehlteFigur;
+    int umrandungX=0,umrandungY=0;
 
 //(*InternalHeaders(muehleFrame)
 #include <wx/intl.h>
@@ -135,8 +139,16 @@ muehleFrame::muehleFrame(wxWindow* parent,wxWindowID id)
     spielfeld[6][4].wert=-1;
     spielfeld[6][5].wert=-1;
 
+
+
     bildSpielerWeiss.LoadFile("weiﬂ.png", wxBITMAP_TYPE_PNG);
     bildSpielerSchwarz.LoadFile("schwarz.png", wxBITMAP_TYPE_PNG);
+    hintergrund.LoadFile("spielfeld.png", wxBITMAP_TYPE_PNG);
+
+   /* wxString meldung="Spieler ";
+    meldung << spielerAnDerReihe;
+    meldung = meldung + " darf einen Stein setzen";
+    StatusBar1->SetStatusText(meldung);*/
 }
 
 muehleFrame::~muehleFrame()
@@ -159,8 +171,8 @@ void muehleFrame::OnAbout(wxCommandEvent& event)
 void muehleFrame::OnPaint(wxPaintEvent& event)
 {
     wxBufferedPaintDC dc(this);
-    wxBitmap bitmap("spielfeld.png", wxBITMAP_TYPE_PNG);
-    dc.DrawBitmap(bitmap, 0, 0, false);
+
+    dc.DrawBitmap(hintergrund, 0, 0, false);
 
     //wxBitmap bitmap1("weiﬂ.jpg", wxBITMAP_TYPE_JPEG);
     //dc.DrawBitmap(bitmap1, stein.x, stein.y, false);
@@ -181,6 +193,14 @@ void muehleFrame::OnPaint(wxPaintEvent& event)
                     dc.DrawBitmap(bildSpielerSchwarz, i*90, j*90, false);
                 }
         }
+    }
+
+    if (umrandungX!=0)
+    {
+         dc.SetBrush(*wxTRANSPARENT_BRUSH);
+      //Set Pen-> Color:255,50,50 , Width:Default Value
+        dc.SetPen(wxPen(wxColour(0,50,50)));
+        dc.DrawRectangle(umrandungX*90,umrandungY*90,75,75);
     }
 }
 
@@ -206,9 +226,10 @@ void aufMuehlenPruefen(int x,int y)
                 if (spielfeld[j][y].wert==spielerAnDerReihe)
                 {
 
-                    if (spielfeld[j+(j-i)][y].wert==spielerAnDerReihe && j+(j-i)<7)
+                    if (spielfeld[j+(j-i)][y].wert==spielerAnDerReihe && j+(j-i)<7 && (j-i==0 || spielfeld[j+1][y].wert!=-2))
                     {
                         aktuellerSpielerHatMuehle=true;
+
 
 
                     }
@@ -233,7 +254,7 @@ void aufMuehlenPruefen(int x,int y)
                 if (spielfeld[x][j].wert==-2) {break;}
                 if (spielfeld[x][j].wert==spielerAnDerReihe)
                 {
-                    if (spielfeld[x][j+(j-i)].wert==spielerAnDerReihe && j+(j-i)<7)
+                    if (spielfeld[x][j+(j-i)].wert==spielerAnDerReihe && j+(j-i)<7 && (j-i==0 || spielfeld[j+1][y].wert!=-2))
                     {
                         aktuellerSpielerHatMuehle=true;
 
@@ -271,10 +292,18 @@ void steinentfernen(int x,int y)
         }
 
 
-        if (spieler[spielerNichtAnDerReihe-1].anzahltatsaechlicheSteine==3 && phase==2)
+        if (spieler[spielerNichtAnDerReihe-1].anzahltatsaechlicheSteine==3 && phase!=1)
         {
             phase=3;
             spieler[spielerNichtAnDerReihe-1].darfspringen=true;
+        }
+
+         if (spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine<3 && phase!=1)
+        {
+            wxString meldung="Spieler ";
+            meldung << spielerNichtAnDerReihe;
+            meldung = meldung + " hat gewonnen";
+            wxMessageBox(meldung);
         }
 
 
@@ -287,8 +316,9 @@ void steinentfernen(int x,int y)
 
 void steinsetzen(int x,int y)
 {
-     if (spieler[1].anzahlgesetzteSteine==9)
-        {phase=2;}
+     if (spieler[1].anzahlgesetzteSteine==4)
+        {phase=2;
+         wxMessageBox("Phase 2");}
      else
      {
          spielfeld[x][y].wert=spielerAnDerReihe;
@@ -303,6 +333,9 @@ void steinsetzen(int x,int y)
 
 void muehleFrame::OnLeftDown(wxMouseEvent& event)
 {
+
+if (spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine>=3 || spieler[spielerAnDerReihe-1].anzahlgesetzteSteine<3)
+{
    const wxPoint pt = wxGetMousePosition();
     int mausX = pt.x - this->GetScreenPosition().x;
     int mausY = pt.y - this->GetScreenPosition().y;
@@ -310,11 +343,22 @@ void muehleFrame::OnLeftDown(wxMouseEvent& event)
     int spielfeldY=mausY/90;
 
 
+if (aktuellerSpielerHatMuehle)
+    {
+        steinentfernen(spielfeldX,spielfeldY);
+        Refresh();
+    }
+
+
+
+
+else
+        {
+
 
     if (phase==1)
     {
-        if (!aktuellerSpielerHatMuehle)
-        {
+
 
             //if ((spielfeld[mausX/90][mausY/90].wert!=-1) && (spielfeld[mausX/90][mausY/90].wert!=1) && (spielfeld[mausX/90][mausY/90].wert!=2))
             if (spielfeld[spielfeldX][spielfeldY].wert==0)
@@ -343,35 +387,127 @@ void muehleFrame::OnLeftDown(wxMouseEvent& event)
             }
 
         }
-    }
-
-
-
-
-
-    else if (phase==2)
-    {
-    wxMessageBox("test");
-    }
 
 
 
 
 
 
-    else if (phase==3)
+    else if (phase==2 && spieler[spielerAnDerReihe].darfspringen!=true)
     {
 
+
+                if (spielfeld[spielfeldX][spielfeldY].wert==spielerAnDerReihe)
+                    {
+                     ausgewaehlteFigur.x=spielfeldX;
+                     ausgewaehlteFigur.y=spielfeldY;
+                     figurausgewaehlt=true;
+                    umrandungX=spielfeldX;
+                    umrandungY=spielfeldY;
+                    Refresh();
+                    }
+
+
+                    else if (spielfeld[spielfeldX][spielfeldY].wert==0 && figurausgewaehlt)
+                    {
+
+                        ///Darf nur auf benachbartes Feld
+                        int darfsetzen=0;
+                    if (ausgewaehlteFigur.x==spielfeldX)
+                        {
+                            for (int i=0;i<=7;i++)
+                            {
+                                if ((i==spielfeldY || i==ausgewaehlteFigur.y) && (darfsetzen==1 ||darfsetzen==2)) break;
+                                if ((spielfeld[spielfeldX][i].wert==spielerNichtAnDerReihe || spielfeld[spielfeldX][i].wert==-2 || spielfeld[spielfeldX][i].wert==0) && darfsetzen==1) darfsetzen=2;
+                                if ((i==spielfeldY || i==ausgewaehlteFigur.y) && darfsetzen==0) darfsetzen=1;
+
+                            }
+
+                        }
+                    else if (ausgewaehlteFigur.y==spielfeldY)
+                        {
+                            for (int i=0;i<=7;i++)
+                            {
+                            if ((i==spielfeldX || i==ausgewaehlteFigur.x) && (darfsetzen==1 ||darfsetzen==2)) break;
+                            if ((spielfeld[i][spielfeldY].wert==spielerNichtAnDerReihe || spielfeld[i][spielfeldY].wert==-2 || spielfeld[i][spielfeldY].wert==0) && darfsetzen==1) darfsetzen=2;
+                            if ((i==spielfeldX || i==ausgewaehlteFigur.x) && darfsetzen==0) darfsetzen=1;
+                            }
+                        }
+
+
+
+                    if (darfsetzen==1)
+                    {
+                     spielfeld[spielfeldX][spielfeldY].wert=spielerAnDerReihe;
+                     spielfeld[ausgewaehlteFigur.x][ausgewaehlteFigur.y].wert=0;
+                     umrandungX=0;
+                    umrandungY=0;
+                     Refresh();
+                     figurausgewaehlt=false;
+
+                        aufMuehlenPruefen(spielfeldX,spielfeldY);
+
+                        if (spielerAnDerReihe==1 && !aktuellerSpielerHatMuehle)
+                        {
+                        spielerAnDerReihe =2;
+                        spielerNichtAnDerReihe =1;
+                        }
+                        else if (!aktuellerSpielerHatMuehle)
+                        {
+                        spielerAnDerReihe =1;
+                        spielerNichtAnDerReihe =2;
+                        }
+                    }
+                    }
+
+
     }
 
 
 
-    if (aktuellerSpielerHatMuehle)
+
+
+    else if (spieler[spielerAnDerReihe].darfspringen==true)
     {
-        steinentfernen(spielfeldX,spielfeldY);
-        Refresh();
+
+
+
+                if (!figurausgewaehlt && spielfeld[spielfeldX][spielfeldY].wert==spielerAnDerReihe)
+                    {
+                     ausgewaehlteFigur.x=spielfeldX;
+                     ausgewaehlteFigur.y=spielfeldY;
+                     figurausgewaehlt=true;
+
+
+
+                    }
+                    else if (spielfeld[spielfeldX][spielfeldY].wert==0 && figurausgewaehlt)
+                    {
+                     spielfeld[spielfeldX][spielfeldY].wert=spielerAnDerReihe;
+                     spielfeld[ausgewaehlteFigur.x][ausgewaehlteFigur.y].wert=0;
+                     Refresh();
+                     figurausgewaehlt=false;
+
+                        aufMuehlenPruefen(spielfeldX,spielfeldY);
+
+                        if (spielerAnDerReihe==1 && !aktuellerSpielerHatMuehle)
+                        {
+                        spielerAnDerReihe =2;
+                        spielerNichtAnDerReihe =1;
+                        }
+                        else if (!aktuellerSpielerHatMuehle)
+                        {
+                        spielerAnDerReihe =1;
+                        spielerNichtAnDerReihe =2;
+                        }
+                    }
+
+
     }
 
+ }
+
+}
 
 
 }
