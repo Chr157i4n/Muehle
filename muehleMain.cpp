@@ -26,7 +26,8 @@
     int phase=1;
     bool figurausgewaehlt=false;
     wxPoint ausgewaehlteFigur;
-    int umrandungX=0,umrandungY=0;
+    int umrandungX=-1,umrandungY=-1;
+    wxString meldung;
 
 //(*InternalHeaders(muehleFrame)
 #include <wx/intl.h>
@@ -145,11 +146,14 @@ muehleFrame::muehleFrame(wxWindow* parent,wxWindowID id)
     bildSpielerSchwarz.LoadFile("schwarz.png", wxBITMAP_TYPE_PNG);
     hintergrund.LoadFile("spielfeld.png", wxBITMAP_TYPE_PNG);
 
-   /* wxString meldung="Spieler ";
+
+   // meldunganzeigen(meldung);
+    meldung="Spieler ";
     meldung << spielerAnDerReihe;
     meldung = meldung + " darf einen Stein setzen";
-    StatusBar1->SetStatusText(meldung);*/
 }
+
+
 
 muehleFrame::~muehleFrame()
 {
@@ -195,14 +199,21 @@ void muehleFrame::OnPaint(wxPaintEvent& event)
         }
     }
 
-    if (umrandungX!=0)
+    if (umrandungX!=-1)
     {
          dc.SetBrush(*wxTRANSPARENT_BRUSH);
       //Set Pen-> Color:255,50,50 , Width:Default Value
         dc.SetPen(wxPen(wxColour(0,50,50)));
         dc.DrawRectangle(umrandungX*90,umrandungY*90,75,75);
     }
+
+    StatusBar1->SetStatusText(meldung);
+
+
+
 }
+
+
 
 
 void aufMuehlenPruefen(int x,int y)
@@ -229,6 +240,9 @@ void aufMuehlenPruefen(int x,int y)
                     if (spielfeld[j+(j-i)][y].wert==spielerAnDerReihe && j+(j-i)<7 && (j-i==0 || spielfeld[j+1][y].wert!=-2))
                     {
                         aktuellerSpielerHatMuehle=true;
+                        meldung="Spieler ";
+                        meldung << spielerAnDerReihe;
+                        meldung = meldung + " hat eine Mühle und darf einen Stein vom Gegner wegnehmen";
 
 
 
@@ -254,10 +268,12 @@ void aufMuehlenPruefen(int x,int y)
                 if (spielfeld[x][j].wert==-2) {break;}
                 if (spielfeld[x][j].wert==spielerAnDerReihe)
                 {
-                    if (spielfeld[x][j+(j-i)].wert==spielerAnDerReihe && j+(j-i)<7 && (j-i==0 || spielfeld[j+1][y].wert!=-2))
+                    if (spielfeld[x][j+(j-i)].wert==spielerAnDerReihe && j+(j-i)<7 && (j-i==0 || spielfeld[x][j+1].wert!=-2))
                     {
                         aktuellerSpielerHatMuehle=true;
-
+                        meldung="Spieler ";
+                        meldung << spielerAnDerReihe;
+                        meldung = meldung + " hat eine Mühle und darf einen Stein vom Gegner wegnehmen";
 
 
                     }
@@ -291,16 +307,23 @@ void steinentfernen(int x,int y)
             spielerNichtAnDerReihe =2;
         }
 
+        meldung="Spieler ";
+        meldung << spielerAnDerReihe;
+        meldung = meldung + " darf einen Stein setzen";
 
-        if (spieler[spielerNichtAnDerReihe-1].anzahltatsaechlicheSteine==3 && phase!=1)
+
+        if (spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine==3 && phase!=1)
         {
             phase=3;
-            spieler[spielerNichtAnDerReihe-1].darfspringen=true;
+            spieler[spielerAnDerReihe-1].darfspringen=true;
+             meldung= "Spieler ";
+             meldung << spielerAnDerReihe;
+             meldung = meldung + " darf nun springen";
         }
 
          if (spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine<3 && phase!=1)
         {
-            wxString meldung="Spieler ";
+            meldung="Spieler ";
             meldung << spielerNichtAnDerReihe;
             meldung = meldung + " hat gewonnen";
             wxMessageBox(meldung);
@@ -316,15 +339,17 @@ void steinentfernen(int x,int y)
 
 void steinsetzen(int x,int y)
 {
-     if (spieler[1].anzahlgesetzteSteine==4)
-        {phase=2;
-         wxMessageBox("Phase 2");}
-     else
+
+     if (spieler[1].anzahlgesetzteSteine<9)
      {
          spielfeld[x][y].wert=spielerAnDerReihe;
          spieler[spielerAnDerReihe-1].anzahlgesetzteSteine++;
          spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine++;
      }
+     if (spieler[1].anzahlgesetzteSteine==9)
+        {
+            phase=2;
+            wxMessageBox("Phase 2");}
 
 }
 
@@ -334,7 +359,7 @@ void steinsetzen(int x,int y)
 void muehleFrame::OnLeftDown(wxMouseEvent& event)
 {
 
-if (spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine>=3 || spieler[spielerAnDerReihe-1].anzahlgesetzteSteine<3)
+if (spieler[spielerAnDerReihe-1].anzahltatsaechlicheSteine>=3 || spieler[spielerAnDerReihe-1].anzahlgesetzteSteine<4)
 {
    const wxPoint pt = wxGetMousePosition();
     int mausX = pt.x - this->GetScreenPosition().x;
@@ -367,7 +392,9 @@ else
                 steinsetzen(spielfeldX,spielfeldY);
 
 
-                Refresh();
+                    meldung="Spieler ";
+                    meldung << spielerNichtAnDerReihe;
+                    meldung = meldung + " darf einen Stein setzen";
 
                 aufMuehlenPruefen(spielfeldX,spielfeldY);
 
@@ -377,13 +404,18 @@ else
                     {
                         spielerAnDerReihe =2;
                         spielerNichtAnDerReihe =1;
+
                     }
                     else
                     {
                         spielerAnDerReihe =1;
                         spielerNichtAnDerReihe =2;
                     }
+
+
+
                 }
+                Refresh();
             }
 
         }
@@ -433,6 +465,7 @@ else
                             if ((i==spielfeldX || i==ausgewaehlteFigur.x) && darfsetzen==0) darfsetzen=1;
                             }
                         }
+                        ///Darf nur auf benachbartes Feld
 
 
 
@@ -440,10 +473,16 @@ else
                     {
                      spielfeld[spielfeldX][spielfeldY].wert=spielerAnDerReihe;
                      spielfeld[ausgewaehlteFigur.x][ausgewaehlteFigur.y].wert=0;
-                     umrandungX=0;
-                    umrandungY=0;
+                     umrandungX=-1;
+
                      Refresh();
                      figurausgewaehlt=false;
+
+                        meldung="Spieler ";
+                        meldung << spielerNichtAnDerReihe;
+                        if (spieler[spielerNichtAnDerReihe-1].darfspringen)
+                        {meldung = meldung + " darf nun mit einem Stein springen";}
+                        else {meldung = meldung + " darf nun einen Stein versetzen";}
 
                         aufMuehlenPruefen(spielfeldX,spielfeldY);
 
@@ -477,7 +516,9 @@ else
                      ausgewaehlteFigur.x=spielfeldX;
                      ausgewaehlteFigur.y=spielfeldY;
                      figurausgewaehlt=true;
-
+                    umrandungX=spielfeldX;
+                    umrandungY=spielfeldY;
+                    Refresh();
 
 
                     }
@@ -485,8 +526,15 @@ else
                     {
                      spielfeld[spielfeldX][spielfeldY].wert=spielerAnDerReihe;
                      spielfeld[ausgewaehlteFigur.x][ausgewaehlteFigur.y].wert=0;
+                     umrandungX=-1;
                      Refresh();
                      figurausgewaehlt=false;
+
+                        meldung="Spieler ";
+                        meldung << spielerNichtAnDerReihe;
+                        if (spieler[spielerNichtAnDerReihe-1].darfspringen)
+                        {meldung = meldung + " darf nun mit einem Stein springen";}
+                        else {meldung = meldung + " darf nun einen Stein versetzen";}
 
                         aufMuehlenPruefen(spielfeldX,spielfeldY);
 
